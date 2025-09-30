@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "bfr"
+version = "0.1.0"
+description = "Bayesian Fréchet Regression"
+authors = ["fontaine618 <simfont@umich.edu>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+matplotlib = "^3.10.3"
+numpy = "^2.2.6"
+seaborn = "^0.13.2"
+torch = "^2.7.0"
+pandas = "^2.2.3"
+pypet = {git = "https://github.com/fontaine618/pypet.git"}
+birdman = "^0.2.0"
+statsmodels = "^0.14.4"
+torcheval = "^0.0.7"
+rpy2 = "^3.6.1"
+scikit-bio = "^0.6.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"

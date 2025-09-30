@@ -13,7 +13,7 @@ from experiments.microbiome.data_loader import T2D
 sq_dist = c.squared_hellinger_distance
 
 prior_study_name = "MetaCardis_2020_a"
-train_eval_study_name = "QinJ_2012"
+train_eval_study_name = "QinJ_2012" # "KarlssonFH_2013"
 
 prior_study = T2D()
 prior_study.filter_rare_taxa()
@@ -45,16 +45,11 @@ def kernel(X1: pd.DataFrame, X2: pd.DataFrame) -> torch.Tensor:
     N1 = X1.shape[0]
     N2 = X2.shape[0]
     K = torch.zeros(N1, N2)
-    # T2D
     K += X1['T2D'].values.reshape(-1, 1) == X2['T2D'].values.reshape(1, -1)
-    # antibiotics
     K += X1['antibiotics'].values.reshape(-1, 1) == X2['antibiotics'].values.reshape(1, -1)
-    # female
     K += X1['female'].values.reshape(-1, 1) == X2['female'].values.reshape(1, -1)
-    # age
     K += (torch.tensor(X1['age'].values, dtype=torch.float32).reshape(-1, 1) -
         torch.tensor(X2['age'].values, dtype=torch.float32).reshape(1, -1)).pow(2.).div(100.0).neg().exp()
-    # bmi
     K += (torch.tensor(X1['BMI'].values, dtype=torch.float32).reshape(-1, 1) -
         torch.tensor(X2['BMI'].values, dtype=torch.float32).reshape(1, -1)).pow(2.).div(25.0).neg().exp()
     return K

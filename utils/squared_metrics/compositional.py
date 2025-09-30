@@ -95,7 +95,7 @@ def squared_spherical_norm_distance(
         Y: torch.Tensor,  # M x P
 ) -> torch.Tensor:  # N x M
     ip = (X / X.norm(dim=-1, keepdim=True) * Y / Y.norm(dim=-1, keepdim=True)).sum(dim=-1)  # N x M
-    ip = ip.clamp(min=-0.999, max=0.999)  # avoid boundary issues
+    ip = ip.clamp(min=-0.999999, max=0.999999)  # avoid boundary issues
     return (torch.acos(ip)).pow(2)  # N x M
 
 
@@ -104,10 +104,10 @@ def squared_spherical_norm_distance(
 def squared_aitchison_distance(
         X: torch.Tensor,  # N x P
         Y: torch.Tensor,  # M x P
-        offset: float = 0.5,  # small constant to avoid zero
+        offset: float = 1e-5,  # small constant to avoid zero
 ) -> torch.Tensor:  # N x M
-    X = X + offset  # N x 1 x P
-    Y = Y + offset  # 1 x M x P
+    X = X.clamp_(offset)  # N x 1 x P
+    Y = Y.clamp_(offset)  # 1 x M x P
     # CLR
     X_clr = X.log()
     X_clr = X_clr - X_clr.mean(dim=-1, keepdim=True)  # N x 1 x P

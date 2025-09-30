@@ -103,13 +103,13 @@ class BFR:
                 velocity.mul_(momentum).add_(Z.grad)
                 Z.sub_(lr * velocity)
                 Z.copy_(projection(Z))
-            if i % 10 == 0:
-                print(f"Iter {i}: Loss = {loss.item():.6f}")
+            # if i % 10 == 0:
+            #     print(f"Iter {i}: Loss = {loss.item():.6f}")
             if abs(prev_loss - loss.item()) < tol * abs(prev_loss):
                 print(f"Iter {i}: Loss = {loss.item():.6f} (converged)")
                 break
             if restart and loss.item() > prev_loss:
-                print(f"Iter {i}: Loss = {loss.item():.6f} (restart)")
+                # print(f"Iter {i}: Loss = {loss.item():.6f} (restart)")
                 velocity.zero_()
             prev_loss = loss.item()
         return inv_transform(Z.detach())

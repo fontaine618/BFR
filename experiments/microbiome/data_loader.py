@@ -26,8 +26,8 @@ class T2D:
         """Filter taxa that are present in less than `min_prevalence` fraction of samples."""
         prevalence = (self._rel > 0).sum(axis=0) / self._rel.shape[0]
         to_keep = prevalence[prevalence >= min_prevalence].index
-        # drop others, but add the dropped abundance into "Other"
         dropped = self._rel.columns.difference(to_keep)
+        self._rel = self._rel.copy()
         if len(dropped) > 0:
             self._rel['Other'] = self._rel[dropped].sum(axis=1)
         self._rel = self._rel[to_keep.tolist() + (['Other'] if len(dropped) > 0 else [])]

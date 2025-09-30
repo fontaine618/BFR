@@ -196,7 +196,7 @@ def run_experiment(
 # MAIN LOOP
 all_results = pd.DataFrame()
 for i in range(n_experiments):
-    train_test_dataset_name, variance_ratio, sq_dist_name = experiments[i]
+    sq_dist_name, train_test_dataset_name, variance_ratio = experiments[i]
     print(f"Running experiment {i+1}/{n_experiments}: "
           f"Train/Test={train_test_dataset_name}, Variance Ratio={variance_ratio}, Distance={sq_dist_name}")
     results = run_experiment(

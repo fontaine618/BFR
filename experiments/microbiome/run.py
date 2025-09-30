@@ -25,9 +25,9 @@ sq_dists = {
     "spherical": c.squared_spherical_norm_distance,
 }
 experiments = list(itertools.product(
+    sq_dists.keys(),
     train_test_dataset_names,
     variance_ratios,
-    sq_dists.keys(),
 ))
 n_experiments = len(experiments)
 # ----------------------------------------------------------------------------------------------------------------------

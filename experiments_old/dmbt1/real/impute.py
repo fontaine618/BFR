@@ -1,25 +1,20 @@
 from pyloseq.pyloseq import Pyloseq
 import pandas as pd
 import numpy as np
-import scipy
 import torch
-import sys, argparse
 import os
 import utils.squared_metrics.compositional as c
 from bfr.kulsif import kulsif
-from bfr.bgfr import BGFR, GFR
+from bfr.bgfr import BGFR
 from nlbgfr import NLGFR
 from utils.kernels.squared_exponential import squared_exponential_kernel
 from utils.kernels.laplacian import laplacian_kernel
 from utils.squared_metrics.euclidean import squared_L2_distance
-from pyloseq.zinb import zinb
-from statsmodels.stats.multitest import multipletests
-from experiments.dmbt1.simulated.gen_data import generate_longitudinal_microbiome_data
 import pyloseq.taxonomy as tax
 
 # ======================================================================================================================
 # SETTINGS
-DIR_RESULTS = "/home/simon/Documents/BFR/experiments/dmbt1/real/results/"
+DIR_RESULTS = "/experiments_old/dmbt1/real/results/"
 
 os.makedirs(DIR_RESULTS, exist_ok=True)
 
@@ -29,6 +24,7 @@ reg = 0.001
 
 max_iter = 100
 lr = 0.05
+library_size = 9484
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -49,7 +45,7 @@ samples["SubjectID"] = samples["SubjectID"].astype(str).str.zfill(4)
 samples["SampleID"] = samples["SubjectID"] + "_" + samples["Week"].astype(str)
 samples = samples.set_index("SampleID")
 samples["missing"] = False
-samples.drop(["Group"], axis=1, inplace=True)
+# samples.drop(["Group"], axis=1, inplace=True)
 
 taxo = pd.read_csv(DIRDATA + "taxo.csv", index_col=0)
 taxo = taxo.drop(["Size"], axis=1)
@@ -58,14 +54,15 @@ taxo = tax.unclassified_to_nan(taxo)
 
 otu = pd.read_csv(DIRDATA + "otu.csv", index_col=1)
 otu = otu.drop(["label", "numOtus"], axis=1)
-otu.index = samples.index
+otu.sort_index(inplace=True)
+otu.index = samples.sort_values("Group").index
 
 data = Pyloseq(
     otu_table=otu,
     sample_data=samples,
     tax_table=taxo
 )
-data = data.filter_rare(detection=1, prevalence=0.10)
+# data = data.filter_rare(detection=1, prevalence=0.05)
 
 # create a fake dataset to receive the missing entries
 meta = samples[["SubjectID", "Genotype", "Diagnosis", "Sex"]]
@@ -82,6 +79,7 @@ all_samples = all_samples.merge(meta, on="SubjectID", how="left")
 all_samples = all_samples.set_index("SampleID")
 all_samples["missing"] = np.isin(all_samples.index.values, data.sample_data.index.values, invert=True)
 missing = all_samples[all_samples["missing"]].copy()
+missing["Group"] = ""
 # table of nans to mimic otu
 missing_otu = pd.DataFrame(
     np.nan,
@@ -171,7 +169,7 @@ def global_impute(previous: Pyloseq, current: Pyloseq, **kwargs) -> Pyloseq:
         prev_logit = logit.clone().detach()
     # Impute
     Y_pred = Y.detach().cpu().numpy()
-    Y_pred = (10000. * Y_pred).round().astype(int)  # convert to counts
+    Y_pred = (library_size * Y_pred).round().astype(int)  # convert to counts
     imputed = current.subset_samples(missing=True, inplace=False)
     imputed.otu_table = pd.DataFrame(
         Y_pred,
@@ -245,7 +243,7 @@ def markov_impute(previous: Pyloseq, current: Pyloseq, **kwargs) -> Pyloseq:
         Y_pred_list.append(Y.detach().cpu().numpy())
     Y_pred = np.concatenate(Y_pred_list, axis=0)
 
-    Y_pred = (10000. * Y_pred).round().astype(int)  # convert to counts
+    Y_pred = (library_size * Y_pred).round().astype(int)  # convert to counts
     imputed = current.subset_samples(missing=True, inplace=False)
     imputed.otu_table = pd.DataFrame(
         Y_pred,
@@ -388,7 +386,7 @@ def local_impute(previous: Pyloseq, current: Pyloseq, data: Pyloseq, **kwargs) -
         Y_pred_list.append(Y.detach().cpu().numpy())
     Y_pred = np.concatenate(Y_pred_list, axis=0)
 
-    Y_pred = (10000. * Y_pred).round().astype(int)  # convert to counts
+    Y_pred = (library_size * Y_pred).round().astype(int)  # convert to counts
     imputed = current.subset_samples(missing=True, inplace=False)
     imputed.otu_table = pd.DataFrame(
         Y_pred,
@@ -414,12 +412,12 @@ experiments = [
     # (autoregressive_impute, "Autoregressive (Canberra)", "autoregressive_canberra", c.squared_canberra_distance),
     # (global_impute, "Global (Aitchison)", "global_aitchison", c.squared_aitchison_distance),
     # (markov_impute, "Markov (Aitchison)", "markov_aitchison", c.squared_aitchison_distance),
-    # (local_impute, "Local (Aitchison)", "local_aitchison", c.squared_aitchison_distance),
+    (local_impute, "Local (Aitchison)", "local_aitchison", c.squared_aitchison_distance),
     # (autoregressive_impute, "Autoregressive (Aitchison)", "autoregressive_aitchison", c.squared_aitchison_distance),
-    (global_impute, "Global (Hellinger)", "global_hellinger", c.squared_hellinger_distance),
-    (markov_impute, "Markov (Hellinger)", "markov_hellinger", c.squared_hellinger_distance),
+    # (global_impute, "Global (Hellinger)", "global_hellinger", c.squared_hellinger_distance),
+    # (markov_impute, "Markov (Hellinger)", "markov_hellinger", c.squared_hellinger_distance),
     (local_impute, "Local (Hellinger)", "local_hellinger", c.squared_hellinger_distance),
-    (autoregressive_impute, "Autoregressive (Hellinger)", "autoregressive_hellinger", c.squared_hellinger_distance),
+    # (autoregressive_impute, "Autoregressive (Hellinger)", "autoregressive_hellinger", c.squared_hellinger_distance),
     # (global_impute, "Global (Cosine)", "global_cosine", c.squared_cosine_norm_distance),
     # (markov_impute, "Markov (Cosine)", "markov_cosine", c.squared_cosine_norm_distance),
     # (local_impute, "Local (Cosine)", "local_cosine", c.squared_cosine_norm_distance),

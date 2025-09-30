@@ -15,7 +15,7 @@ def unclassified_to_nan(taxo: pd.DataFrame, string: str = "unclassified") -> pd.
 
 def best_taxonomy(taxo: pd.DataFrame) -> pd.DataFrame:
     """
-    Select the best taxonomy for each OTU by keeping the most specific classification.
+Select the best taxonomy for each OTU by keeping the most specific classification.
 
     :param taxo: DataFrame containing taxonomy information.
     :return: DataFrame with the best taxonomy for each OTU.

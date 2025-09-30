@@ -13,16 +13,16 @@ def zinb(
 ):
     results = []
     for g in pyloseq_obj.sample_data[groupby].unique().tolist():
-        dmbt1w = pyloseq_obj.subset_samples(inplace=False, **{groupby: g})
+        psg = pyloseq_obj.subset_samples(inplace=False, **{groupby: g})
         for otu in pyloseq_obj.otu_table.columns:
             df = pd.DataFrame({
-                "count": dmbt1w.otu_table[otu].values,
-                "depth": dmbt1w.otu_table.sum(axis=1).values,
-                groupby: dmbt1w.sample_data[xvar].values,
+                "count": psg.otu_table[otu].values,
+                "depth": psg.otu_table.sum(axis=1).values,
+                xvar: psg.sample_data[xvar].values,
             })
             X = np.array([
                 np.ones(df.shape[0]),  # Intercept
-                df[groupby] != ref_level,  #Group indicator
+                df[xvar] != ref_level,  #Group indicator
             ]).T.astype(float)
 
             try:

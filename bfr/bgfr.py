@@ -84,5 +84,6 @@ class GFR(BGFR):
             self,
             X_train: T,  # N x P
             X_test: T,  # M x P
+            reg: float = 1e-5,  # regularization parameter
     ):
-        super().__init__(X_train, X_test)
+        super().__init__(X_train, X_test, reg=reg)

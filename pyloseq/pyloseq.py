@@ -115,19 +115,30 @@ class Pyloseq:
         else:
             return Pyloseq(otu_table=otu_table, sample_data=self.sample_data.copy(), tax_table=self.tax_table.copy())
 
-    def filter_rare(self, detection: float = 0.01, prevalence: float = 0.1, inplace=True) -> "Pyloseq":
+    def filter_rare(self, detection: float = 0.01, prevalence: float = 0.1,
+                    bin_taxa: bool = False, inplace=True) -> "Pyloseq":
         """
         Filter out rare OTUs based on detection and prevalence thresholds.
 
         :param detection: Minimum detection threshold (p/a).
         :param prevalence: Minimum prevalence threshold (fraction of samples).
+        :param bin_taxa: If True, bin taxa that do not meet the thresholds into a single "Other" category.
         """
         prop = (self.otu_table.map(lambda x: x>=detection)).sum(axis=0) / self.otu_table.shape[0]
         keep = prop >= prevalence
         if not keep.any():
             raise ValueError("No OTUs meet the detection and prevalence thresholds.")
-        otu_table = self.otu_table.loc[:, keep]
-        tax_table = self.tax_table.loc[self.otu_table.columns]
+        if bin_taxa:
+            # Bin rare taxa into a single "Other" category
+            other_taxa = self.otu_table.loc[:, ~keep].sum(axis=1)
+            otu_table = self.otu_table.loc[:, keep].copy()
+            otu_table["Other"] = other_taxa
+            tax_table = self.tax_table.loc[self.otu_table.columns]
+            tax_table.loc["Other"] = ["Other"] * tax_table.shape[1]
+        else:
+            # Keep only the taxa that meet the thresholds
+            otu_table = self.otu_table.loc[:, keep].copy()
+            tax_table = self.tax_table.loc[self.otu_table.columns]
 
         if inplace:
             self.otu_table = otu_table
@@ -221,15 +232,19 @@ class Pyloseq:
         if self.sample_data.shape[1] != obj.sample_data.shape[1]:
             raise ValueError("The number of features in sample_data must match for concat.")
 
-        # Concatenate the OTU tables, sample data
-        self.otu_table = pd.concat([self.otu_table, obj.otu_table], axis=0)
-        self.sample_data = pd.concat([self.sample_data, obj.sample_data], axis=0)
+        otu_table = pd.concat([self.otu_table, obj.otu_table], axis=0)
+        sample_data = pd.concat([self.sample_data, obj.sample_data], axis=0)
+        return Pyloseq(otu_table=otu_table, sample_data=sample_data, tax_table=self.tax_table.copy())
 
-        # Sort the indices of the concatenated dataframes
-        self.otu_table.sort_index(inplace=True)
-        self.sample_data.sort_index(inplace=True)
-
-        return self
+        # # Concatenate the OTU tables, sample data
+        # self.otu_table = pd.concat([self.otu_table, obj.otu_table], axis=0)
+        # self.sample_data = pd.concat([self.sample_data, obj.sample_data], axis=0)
+        #
+        # # Sort the indices of the concatenated dataframes
+        # self.otu_table.sort_index(inplace=True)
+        # self.sample_data.sort_index(inplace=True)
+        #
+        # return self
 
     def copy(self) -> "Pyloseq":
         """

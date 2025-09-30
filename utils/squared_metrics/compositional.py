@@ -51,7 +51,7 @@ def squared_hellinger_distance(
         Y: torch.Tensor,  # M x P
 ) -> torch.Tensor:  # N x M
     diff = (X - Y).pow(2)  # N x M x P
-    return diff.mean(dim=-1)  # N x M
+    return 0.5 * diff.sum(dim=-1)  # N x M
 
 
 @sqrt

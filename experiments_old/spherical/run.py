@@ -18,6 +18,9 @@ from utils.squared_metrics.spherical import squared_geodesic_distance, squared_c
 from utils.squared_metrics.euclidean import squared_L2_distance
 from utils.kernels.laplacian import laplacian_kernel
 
+blue = "#001E44"
+lightblue = "#96BEE6"
+
 # ======================================================================================================================
 # SETTINGS
 DIRFIGURES = "./experiments/spherical/figures/"
@@ -28,10 +31,10 @@ prior_invstrength = 0.1
 X_scales = [0.5]
 Y_scales = [0.5]
 # Regularization parameters
-regs = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1., ]
-regs2 = [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, ]
-regs = [0.01]
-# regs2 = [0.01]
+regs = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1., 3., 10., 30., 100.]
+# regs2 = [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, ]
+# regs = [0.01]
+regs2 = [0.0001]
 # Fit parameters
 max_iter = 1000
 lr = 0.005
@@ -47,7 +50,6 @@ def generate_data(
         sd=0.3,
         seed=0,
         equally_spread=False,
-        partial=False
 ):
     torch.manual_seed(seed)
     if equally_spread:
@@ -69,7 +71,7 @@ X_train, Y_train, Yc_train = generate_data(N=20, seed=0)
 
 # prior data
 X_prior, Y_prior, Yc_prior = generate_data(N=100, seed=1, sd=0.3*prior_invstrength,
-                                           equally_spread=True, partial=False)
+                                           equally_spread=True)
 
 # testing data
 X_test, Y_test, Yc_test = generate_data(N=500, seed=2, equally_spread=True)
@@ -211,70 +213,53 @@ Y_nlbgfr, ratio = nlbgfr_results[best]
 # PLOT RESULTS
 
 # prepare frame
-theta, phi = np.linspace(0, 2 * np.pi, 100), np.linspace(0, np.pi, 100)
+theta, phi = np.linspace(0, 2 * np.pi, 50), np.linspace(0, np.pi, 50)
 theta, phi = np.meshgrid(theta, phi)
 r = 1
 x = r * np.sin(phi) * np.cos(theta)
 y = r * np.sin(phi) * np.sin(theta)
 z = r * np.cos(phi)
 
-exp="perfect"
+exp="spherical"
 
 plt.cla()
-fig = plt.figure(figsize=(10, 8))
-ax = fig.add_subplot(111, projection='3d')
-ax.plot_wireframe(x, y, z, color='k', alpha=0.1, linewidth=0.5)
+fig = plt.figure(figsize=(10, 5))
+
+# Plot estimation error
+errors = [nlbgfr_pred_error[(X_scale, Y_scale, reg, reg2)][1] for reg in regs]
+
+ax = fig.add_subplot(121)
+ax.axhline(y=nlgfr_pred_error[best][1], color=blue, linestyle="--", label="NLGFR")
+ax.plot(regs, errors, color=lightblue, label="NLBGFR")
+ax.set_xscale("log")
+ax.set_xlabel("KuLSIF Regularization")
+ax.set_ylabel("Estimation error")
+ax.legend()
+
+ax = fig.add_subplot(122, projection='3d')
+ax.plot_wireframe(x, y, z, color='k', alpha=0.05, linewidth=0.5)
 cmap = ListedColormap(sns.color_palette("rocket_r", 256).as_hex())
-ax.scatter(Y_train[:, 0], Y_train[:, 1], Y_train[:, 2], c="b", marker='o', label="train", alpha=1.)
-ax.set_xlabel('X')
-ax.set_ylabel('Y')
-ax.set_zlabel('Z')
+
 ax.grid(False)
 ax.set_xticks([])
 ax.set_yticks([])
 ax.set_zticks([])
-ax.set_xlim(-1, 1)
-ax.set_ylim(-1, 1)
-ax.set_zlim(-1, 1)
+ax.set_xlim(-0.7, 0.7)
+ax.set_ylim(-0.7, 0.7)
+ax.set_zlim(-0.7, 0.7)
 ax.view_init(elev=30, azim=60)
+ax.set_axis_off()
+# make the panes transparent
+ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
 plt.tight_layout()
-ax.scatter(Yc_test[:, 0], Yc_test[:, 1], Yc_test[:, 2], c='k', marker='o', label="test (nlbgfr)", alpha=0.2, s=1)
-plt.savefig(f"{DIRFIGURES}/{exp}1.png", bbox_inches="tight", dpi=300)
-ax.scatter(Y_nlgfr[:, 0], Y_nlgfr[:, 1], Y_nlgfr[:, 2], c='b', marker='o', label="test (nlbgfr)", alpha=0.2)
-plt.savefig(f"{DIRFIGURES}/{exp}2.png", bbox_inches="tight", dpi=300)
-ax.scatter(Y_prior[:, 0], Y_prior[:, 1], Y_prior[:, 2], c='k', marker='o', label="prior", alpha=0.2)
-plt.savefig(f"{DIRFIGURES}/{exp}3.png", bbox_inches="tight", dpi=300)
-sc = ax.scatter(Y_train[:, 0], Y_train[:, 1], Y_train[:, 2], c=ratio, marker='o', label="train", alpha=1., cmap=cmap)
-plt.savefig(f"{DIRFIGURES}/{exp}4.png", bbox_inches="tight", dpi=300)
-ax.scatter(Y_nlbgfr[:, 0], Y_nlbgfr[:, 1], Y_nlbgfr[:, 2], c='g', marker='o', label="test (nlbgfr)", alpha=0.2)
-plt.savefig(f"{DIRFIGURES}/{exp}5.png", bbox_inches="tight", dpi=300)
-
-# for i, (exp, res) in enumerate(bgfr_results.items()):
-#     # observed data + truth
-#     plt.cla()
-#     plt.figure(figsize=(5, 4))
-#     ax = plt.gca()
-#     ax.set_xlim(-2.5, 2.5)
-#     ax.set_ylim(2., 4.)
-#     ax.set_xlabel("Mean")
-#     ax.set_ylabel("Std. deviation")
-#     ax.axline((0, 3), slope=0.3, color="gray", linestyle="-")
-#     ax.plot(Y_train[:, 0], Y_train[:, 1], "bo", markersize=3, alpha=0.2)
-#     plt.savefig(f"{DIRFIGURES}/{exp}1.png", bbox_inches="tight", dpi=300)
-#     ax.plot(Ygfr_pred[:, 0], Ygfr_pred[:, 1], "bo", markersize=3, alpha=0.2)
-#     plt.savefig(f"{DIRFIGURES}/{exp}2.png", bbox_inches="tight", dpi=300)
-#     ax.plot(res["Y_prior"][:, 0], res["Y_prior"][:, 1], "ko", alpha=0.5, markersize=3)
-#     plt.savefig(f"{DIRFIGURES}/{exp}3.png", bbox_inches="tight", dpi=300)
-#     ratio = res["best_ratio"]
-#     df = pd.DataFrame({
-#         "mu": Y_train[:, 0].detach().cpu().numpy(),
-#         "sigma": Y_train[:, 1].detach().cpu().numpy(),
-#         "ratio": ratio,
-#     })
-#     sns.scatterplot(data=df, x="mu", y="sigma", hue="ratio", palette="rocket_r", ax=ax, legend=True, zorder=10)
-#     plt.savefig(f"{DIRFIGURES}/{exp}4.png", bbox_inches="tight", dpi=300)
-#     Y = res["best_pred"]
-#     ax.plot(Y[:, 0], Y[:, 1], "go", markersize=3, alpha=0.2)
-#     plt.savefig(f"{DIRFIGURES}/{exp}5.png", bbox_inches="tight", dpi=300)
+ax.scatter(Yc_test[:, 0], Yc_test[:, 1], Yc_test[:, 2], c='k', marker='o', label="Ground truth", alpha=1., s=1)
+ax.scatter(Y_nlgfr[:, 0], Y_nlgfr[:, 1], Y_nlgfr[:, 2], c=blue, marker='o', label="NLGFR prediction", alpha=1.0, s=5)
+ax.scatter(Y_prior[:, 0], Y_prior[:, 1], Y_prior[:, 2], c='k', marker='o', label="Prior data", alpha=0.2, s=5)
+sc = ax.scatter(Y_train[:, 0], Y_train[:, 1], Y_train[:, 2], s=ratio*20, marker='o', label="Training data", alpha=1., c="k")
+ax.scatter(Y_nlbgfr[:, 0], Y_nlbgfr[:, 1], Y_nlbgfr[:, 2], c=lightblue, marker='o', label="NLBGFR predictions", alpha=1.0, s=5)
+ax.legend(framealpha=1.)
+plt.savefig(f"{DIRFIGURES}/{exp}.pdf")
 
 # ----------------------------------------------------------------------------------------------------------------------

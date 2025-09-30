@@ -6,7 +6,7 @@ import itertools
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-sys.path.append('/home/simon/Documents/BFR')
+sys.path.append('/storage/home/spf5519/work/BFR/')
 from nlbgfr.bfr import BFR
 from nlbgfr.nlbr import NLBR
 import utils.squared_metrics.compositional as c

@@ -5,13 +5,13 @@
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=simfont@umich.edu
 #SBATCH --time=12:00:00
-#SBATCH --array=0
+#SBATCH --array=0-9
 #SBATCH --account=open
 #SBATCH --partition=open
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=10
-#SBATCH --mem-per-cpu=80g
+#SBATCH --mem-per-cpu=20g
 #SBATCH --output=/storage/home/spf5519/work/BFR/experiments/microbiome/logs/microbiome_%A_%a.out
 # The application(s) to execute along with its input arguments and options:
 module load python/3.11.2

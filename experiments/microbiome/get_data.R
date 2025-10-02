@@ -27,3 +27,8 @@ T2Drel = assay(T2Dser) %>% data.frame() %>% t()
 # save to CSV
 write.csv(T2Dmeta, "t2d_meta.csv", row.names = FALSE)
 write.csv(T2Drel, "t2d_rel.csv", row.names = TRUE)
+
+
+# summary statistics
+
+table1::table1(~ age + gender + BMI + disease + country + as.factor(T2D) + antibiotics_current_use| study_name, data=T2Dmeta)

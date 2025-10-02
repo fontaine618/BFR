@@ -4,8 +4,8 @@
 #SBATCH --job-name=bfr_microbiome
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=simfont@umich.edu
-#SBATCH --time=12:00:00
-#SBATCH --array=0-9
+#SBATCH --time=8:00:00
+#SBATCH --array=0
 #SBATCH --account=open
 #SBATCH --partition=open
 #SBATCH --nodes=1

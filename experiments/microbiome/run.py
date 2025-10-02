@@ -18,7 +18,11 @@ from experiments.microbiome.data_loader import T2D
 # EXPERIMENTS
 prior_dataset_name = "MetaCardis_2020_a"
 train_test_dataset_names = ["QinJ_2012", "KarlssonFH_2013"]
-variance_ratios = [1e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, float("inf")]
+variance_ratios = {
+    "QinJ_2012": [3e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, float("inf")],
+    "KarlssonFH_2013": [3e-2, 1e-1, 3e-1, 1e0, 3e0, 1e1, 3e1, 1e2, 3e2, 1e3, float("inf")]
+}
+n_variance_ratios = max(len(v) for v in variance_ratios.values())
 sq_dists = {
     "hellinger": c.squared_hellinger_distance,
     "aitchison": c.squared_aitchison_distance,
@@ -27,7 +31,7 @@ sq_dists = {
 experiments = list(itertools.product(
     sq_dists.keys(),
     train_test_dataset_names,
-    variance_ratios,
+    range(n_variance_ratios),
 ))
 n_experiments = len(experiments)
 # ----------------------------------------------------------------------------------------------------------------------
@@ -196,7 +200,8 @@ def run_experiment(
 # MAIN LOOP
 all_results = pd.DataFrame()
 for i in range(n_experiments):
-    sq_dist_name, train_test_dataset_name, variance_ratio = experiments[i]
+    sq_dist_name, train_test_dataset_name, i_variance_ratio = experiments[i]
+    variance_ratio = variance_ratios[train_test_dataset_name][i_variance_ratio]
     print(f"Running experiment {i+1}/{n_experiments}: "
           f"Train/Test={train_test_dataset_name}, Variance Ratio={variance_ratio}, Distance={sq_dist_name}")
     results = run_experiment(

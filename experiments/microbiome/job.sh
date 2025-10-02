@@ -5,7 +5,7 @@
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=simfont@umich.edu
 #SBATCH --time=8:00:00
-#SBATCH --array=0
+#SBATCH --array=0-29
 #SBATCH --account=open
 #SBATCH --partition=open
 #SBATCH --nodes=1
